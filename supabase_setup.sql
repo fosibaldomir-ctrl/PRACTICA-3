@@ -83,3 +83,41 @@ VALUES
 ('Rubén', 'de la Red', 22, '1985-06-05', 'Centrocampista', 'Diestro', 'Real Madrid', 'Gran talento mermado por salud'),
 ('Álvaro', 'Arbeloa', 17, '1983-01-17', 'Defensa', 'Diestro', 'Real Madrid', 'Defensor polivalente'),
 ('Santi', 'Cazorla', 20, '1984-12-13', 'Centrocampista', 'Ambidiestro', 'Arsenal FC', 'Técnica exquisita con ambas piernas');
+
+-- 5. Create Partidos-related tables
+
+CREATE TABLE IF NOT EXISTS equipos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    escudo_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE equipos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all for authenticated users in equipos" ON equipos 
+FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS partidos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    equipo_rival_id UUID REFERENCES equipos(id) ON DELETE SET NULL,
+    nombre_rival TEXT,
+    fecha DATE DEFAULT CURRENT_DATE,
+    analisis_ofensivo TEXT,
+    analisis_defensivo TEXT,
+    analisis_transiciones TEXT,
+    video_rival_url TEXT,
+    slides_url TEXT,
+    video_plan_url TEXT,
+    video_eventos_url TEXT,
+    eventos JSONB DEFAULT '[]'::jsonb,
+    formacion TEXT,
+    alineacion JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE partidos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all for authenticated users in partidos" ON partidos 
+FOR ALL TO authenticated USING (true) WITH CHECK (true);
+

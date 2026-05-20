@@ -25,9 +25,11 @@ import type { Player } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import PlayerForm from '../components/PlayerForm';
 import PlayerPreview from '../components/PlayerPreview';
+import PartidosDashboard from '../components/PartidosDashboard';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [currentMenu, setCurrentMenu] = useState<'partidos' | 'plantilla'>('partidos');
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,18 +149,25 @@ export default function Dashboard() {
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 bg-white/10 text-emerald-400 rounded-xl font-semibold transition-all">
-            <Users size={20} />
-            <span>Plantilla</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+          <button 
+            onClick={() => setCurrentMenu('partidos')}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm cursor-pointer",
+              currentMenu === 'partidos' ? "bg-white/10 text-emerald-400" : "text-slate-400 hover:text-white hover:bg-white/5"
+            )}
+          >
             <Calendar size={20} />
-            <span>Calendario</span>
-            <span className="ml-auto text-[8px] bg-white/10 text-slate-500 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest">WIP</span>
+            <span>Partidos y Análisis</span>
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-            <Award size={20} />
-            <span>Logros</span>
+          <button 
+            onClick={() => setCurrentMenu('plantilla')}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm cursor-pointer",
+              currentMenu === 'plantilla' ? "bg-white/10 text-emerald-400" : "text-slate-400 hover:text-white hover:bg-white/5"
+            )}
+          >
+            <Users size={20} />
+            <span>Fichas de Jugadores</span>
           </button>
         </nav>
 
@@ -182,14 +191,54 @@ export default function Dashboard() {
         </div>
       </aside>
 
+      {/* Mobile Top Bar */}
+      <header className="md:hidden flex items-center justify-between p-4 bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40">
+        <div className="flex items-center gap-2 text-emerald-400">
+          <div className="bg-emerald-500 p-1.5 rounded-lg text-white">
+            <Calendar size={18} />
+          </div>
+          <span className="font-bold text-sm tracking-tight text-white">Partidos</span>
+        </div>
+        
+        {/* Toggle menus */}
+        <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/10 text-[11px]">
+          <button
+            onClick={() => setCurrentMenu('partidos')}
+            className={cn("px-2.5 py-1.5 rounded-md font-bold transition-all cursor-pointer", currentMenu === 'partidos' ? "bg-emerald-500 text-white" : "text-slate-400")}
+          >
+            Partido
+          </button>
+          <button
+            onClick={() => setCurrentMenu('plantilla')}
+            className={cn("px-2.5 py-1.5 rounded-md font-bold transition-all cursor-pointer", currentMenu === 'plantilla' ? "bg-emerald-500 text-white" : "text-slate-400")}
+          >
+            Jugadores
+          </button>
+        </div>
+
+        <button 
+          onClick={handleLogout}
+          className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+          title="Cerrar Sesión"
+        >
+          <LogOut size={16} />
+        </button>
+      </header>
+
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 overflow-x-hidden z-10">
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+        {currentMenu === 'partidos' ? (
           <div>
-            <h2 className="text-4xl font-black text-white tracking-tight">Plantilla Actual</h2>
-            <p className="text-slate-400 font-medium">Controla y organiza los datos de tu equipo</p>
+            <PartidosDashboard />
           </div>
+        ) : (
+          <>
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+              <div>
+                <h2 className="text-4xl font-black text-white tracking-tight">Plantilla Actual</h2>
+                <p className="text-slate-400 font-medium">Controla y organiza los datos de tu equipo</p>
+              </div>
           <button 
             onClick={() => { setSelectedPlayer(undefined); setIsFormOpen(true); }}
             className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-emerald-900/40 hover:bg-emerald-500 transition-all hover:translate-y-[-2px] active:translate-y-0"
@@ -200,33 +249,67 @@ export default function Dashboard() {
           <button 
             onClick={() => {
               const sql = `
--- 🛡️ CONFIGURACIÓN DE SEGURIDAD PARA STORAGE Y COLUMNAS (CÓPIALO TODO)
+-- 🛡️ CONFIGURACIÓN DE SEGURIDAD PARA STORAGE, COLUMNAS Y NUEVAS TABLAS (CÓPIALO TODO)
 -- 1. Asegurar columna 'valoracion' en tabla jugadores
 ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS valoracion TEXT;
 
--- 2. Crear el bucket si no existe
+-- 2. Crear las nuevas tablas para la sección de Partidos
+CREATE TABLE IF NOT EXISTS equipos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    escudo_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE equipos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all for authenticated users in equipos" ON equipos;
+CREATE POLICY "Allow all for authenticated users in equipos" ON equipos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS partidos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    equipo_rival_id UUID REFERENCES equipos(id) ON DELETE SET NULL,
+    nombre_rival TEXT,
+    fecha DATE DEFAULT CURRENT_DATE,
+    analisis_ofensivo TEXT,
+    analisis_defensivo TEXT,
+    analisis_transiciones TEXT,
+    video_rival_url TEXT,
+    slides_url TEXT,
+    video_plan_url TEXT,
+    video_eventos_url TEXT,
+    eventos JSONB DEFAULT '[]'::jsonb,
+    formacion TEXT,
+    alineacion JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE partidos ADD COLUMN IF NOT EXISTS formacion TEXT;
+ALTER TABLE partidos ADD COLUMN IF NOT EXISTS alineacion JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE partidos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all for authenticated users in partidos" ON partidos;
+CREATE POLICY "Allow all for authenticated users in partidos" ON partidos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- 3. Crear el bucket si no existe
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('jugadores', 'jugadores', true) 
 ON CONFLICT (id) DO NOTHING;
 
--- 3. Eliminar políticas antiguas si existen para evitar conflictos
+-- 4. Eliminar políticas antiguas si existen para evitar conflictos
 DROP POLICY IF EXISTS "Public Read" ON storage.objects;
 DROP POLICY IF EXISTS "Auth Upload" ON storage.objects;
 DROP POLICY IF EXISTS "Auth Update" ON storage.objects;
 DROP POLICY IF EXISTS "Auth Delete" ON storage.objects;
 DROP POLICY IF EXISTS "Anon Upload" ON storage.objects;
 
--- 4. Crear nuevas políticas (Permitir a todos mientras pruebas)
+-- 5. Crear nuevas políticas (Permitir a todos mientras pruebas)
 CREATE POLICY "Public Read" ON storage.objects FOR SELECT TO public USING ( bucket_id = 'jugadores' );
 CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ( bucket_id = 'jugadores' );
 CREATE POLICY "Auth Update" ON storage.objects FOR UPDATE TO authenticated USING ( bucket_id = 'jugadores' );
 CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE TO authenticated USING ( bucket_id = 'jugadores' );
-
--- 5. Opcional: Si lo anterior falla, permite subidas anónimas para desbloquearte
--- CREATE POLICY "Anon Upload" ON storage.objects FOR INSERT TO public WITH CHECK ( bucket_id = 'jugadores' );
               `;
               navigator.clipboard.writeText(sql);
-              alert('SQL de Storage y Migración copiado. Pégalo en el SQL Editor de Supabase y dale a RUN.');
+              alert('SQL de Storage, Migración y Tablas de Partidos copiado. Pégalo en el SQL Editor de Supabase y dale a RUN.');
             }}
             className="flex items-center justify-center gap-2 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-6 py-4 rounded-2xl font-bold hover:bg-emerald-500/10 transition-all shadow-lg"
           >
@@ -581,6 +664,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE TO authenticated USING
             </div>
           </div>
         )}
+        </>
+      )}
       </main>
 
       {/* Preview Modal */}

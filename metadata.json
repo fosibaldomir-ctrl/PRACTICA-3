@@ -1,0 +1,6 @@
+{
+  "name": "Fútbol Team Manager",
+  "description": "Una aplicación web interactiva para gestionar equipos de fútbol, con autenticación, base de datos de jugadores y carga de fotos mediante Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

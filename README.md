@@ -1,11 +1,27 @@
-<div align="center">
+# Fútbol Team Manager
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Aplicación profesional para la gestión de plantillas de fútbol.
 
-  <h1>Built with AI Studio</h2>
+## Características
+- Autenticación con Supabase Auth.
+- Base de datos en tiempo real con Supabase Firestore (PostgreSQL).
+- Almacenamiento de imágenes en Supabase Storage.
+- Interfaz moderna y responsive diseñada para tablets y ordenadores.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Configuración
+1. Crea un proyecto en [Supabase](https://supabase.com/).
+2. Ejecuta el contenido de `supabase_setup.sql` en el Editor SQL de Supabase.
+3. Crea un bucket llamado `jugadores` en Supabase Storage y hazlo público (o ajusta las políticas).
+4. Configura las variables de entorno en un archivo `.env` basadas en `.env.example`.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Desarrollo
+```bash
+npm install
+npm run dev
+```
 
-</div>
+## Producción
+```bash
+npm run build
+npm start
+```
